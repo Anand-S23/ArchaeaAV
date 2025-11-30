@@ -8,6 +8,8 @@
     // TODO: Support apple
 #endif
 
+archaea_platform_t global_platform = {0};
+
 int main(void) {
     return 0;
 }
