@@ -18,9 +18,9 @@ uintptr_t align_forward(uintptr_t ptr, u64 align) {
 	return ptr;
 }
 
-void *arena_alloc_align(Arena *a, u64 size, u64 align) {
-	uintptr_t curr_ptr = (uintptr_t)a->buffer + (uintptr_t)a->current_offset;
-	uintptr_t offset = align_forward(curr_ptr, align);
+void *arena_alloc_align(arena_t *a, u64 size, u64 align) {
+	uintptr_t current_ptr = (uintptr_t)a->buffer + (uintptr_t)a->current_offset;
+	uintptr_t offset = align_forward(current_ptr, align);
 	offset -= (uintptr_t)a->buffer;
 
 	if (offset + size <= a->max_size) {
@@ -35,7 +35,32 @@ void *arena_alloc_align(Arena *a, u64 size, u64 align) {
     return NULL;
 }
 
-void *arena_alloc(Arena *a, size_t size) {
+void *arena_alloc(arena_t *a, size_t size) {
 	return arena_alloc_align(a, size, DEFAULT_ALIGNMENT);
+}
+
+void arena_init(arena_t *a, void *backing_buffer, size_t backing_buffer_length) {
+	a->buffer = (unsigned char *)backing_buffer;
+	a->max_size = backing_buffer_length;
+	a->current_offset = 0;
+	a->previous_offset = 0;
+}
+
+void arena_free(arena_t *a) {
+	a->curr_offset = 0;
+	a->prev_offset = 0;
+}
+
+temp_sub_arena_t temp_sub_arena_begin(arena_t *a) {
+	return (temp_sub_arena_t) {
+        .arena = a,
+        .current_offset = a->current_offset,
+        .previous_offset = a->previous_offset
+    }; 
+}
+
+void temp_sub_arena_end(temp_sub_arena_t temp) {
+	temp.arena->previous_offset = temp.previous_offset;
+	temp.arena->current_offset = temp.current_offset;
 }
 
